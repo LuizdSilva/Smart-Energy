@@ -2,6 +2,7 @@
 
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h>
 
 // CONFIGURACAO MQTT
 
@@ -171,28 +172,65 @@ void receberComando(char* topico, byte* payload,
     return;
   }
 
-  String comando = "";
-
-  for (unsigned int i = 0; i < tamanho; i++) {
-    comando += (char)payload[i];
+  if (tamanho == 0 || tamanho > 200) {
+    Serial.println("Tamanho de comando invalido.");
+    return;
   }
 
-  Serial.print("Comando recebido: ");
-  Serial.println(comando);
+  JsonDocument doc;
 
-  if (comando == "LUZ_ON") {
-    luzLigada = true;
+  DeserializationError erro =
+      deserializeJson(doc, payload, tamanho);
 
-  } else if (comando == "LUZ_OFF") {
-    luzLigada = false;
+  if (erro) {
+    Serial.println("Erro ao interpretar JSON!");
+    return;
+  }
 
-  } else if (comando == "AR_ON") {
-    arLigado = true;
+  if (!doc.is<JsonObject>()) {
+    Serial.println("Comando precisa ser um objeto JSON.");
+    return;
+  }
 
-  } else if (comando == "AR_OFF") {
-    arLigado = false;
+  String equipamento = doc["equipamento"] | "";
+  String acao = doc["acao"] | "";
 
-  } else if (comando == "DESLIGAR_TUDO") {
+  Serial.println("Comando JSON recebido:");
+  Serial.println("Equipamento: " + equipamento);
+  Serial.println("Acao: " + acao);
+
+  // CONTROLE DA ILUMINACAO
+  if (equipamento == "iluminacao") {
+
+    if (acao == "ligar") {
+      luzLigada = true;
+
+    } else if (acao == "desligar") {
+      luzLigada = false;
+
+    } else {
+      Serial.println("Acao invalida!");
+      return;
+    }
+
+  // CONTROLE DO AR-CONDICIONADO
+  } else if (equipamento == "ar_condicionado") {
+
+    if (acao == "ligar") {
+      arLigado = true;
+
+    } else if (acao == "desligar") {
+      arLigado = false;
+
+    } else {
+      Serial.println("Acao invalida!");
+      return;
+    }
+
+  // CONTROLE GERAL
+  } else if (equipamento == "todos" &&
+             acao == "desligar") {
+
     luzLigada = false;
     arLigado = false;
 
@@ -204,7 +242,7 @@ void receberComando(char* topico, byte* payload,
   atualizarEquipamentos();
   mostrarEstados();
 
-  Serial.println("Comando executado!");
+  Serial.println("Comando JSON executado!");
 }
 
 void setup() {
