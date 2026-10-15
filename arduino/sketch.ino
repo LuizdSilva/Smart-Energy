@@ -1,4 +1,25 @@
 
+
+#include <WiFi.h>
+#include <PubSubClient.h>
+
+// CONFIGURACAO MQTT
+
+const char* servidorMQTT = "broker.emqx.io";
+const int portaMQTT = 1883;
+
+const char* topicoEstado =
+  "smartenergy/facens/demo-48271/sala-a01/estado";
+
+const char* topicoComando =
+  "smartenergy/facens/demo-48271/sala-a01/comando";
+
+WiFiClient clienteWiFi;
+PubSubClient mqtt(clienteWiFi);
+
+unsigned long ultimaTentativaMQTT = 0;
+unsigned long ultimaPublicacao = 0;
+
 const int sensorPIR = 13;
 
 const int ledLuz = 26;
@@ -41,8 +62,158 @@ void mostrarEstados() {
   Serial.println(arLigado ? "LIGADO" : "DESLIGADO");
 }
 
+void conectarWiFi() {
+  Serial.println("Conectando ao Wi-Fi...");
+
+  WiFi.begin("Wokwi-GUEST", "", 6);
+
+  unsigned long inicio = millis();
+
+  while (WiFi.status() != WL_CONNECTED &&
+         millis() - inicio < 15000) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println();
+    Serial.println("Wi-Fi conectado!");
+    Serial.print("Endereco IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println();
+    Serial.println("Falha ao conectar ao Wi-Fi.");
+  }
+}
+
+void conectarMQTT() {
+
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+
+  if (mqtt.connected()) {
+    return;
+  }
+
+  // Evita tentativas constantes de reconexao
+  if (ultimaTentativaMQTT != 0 &&
+      millis() - ultimaTentativaMQTT < 5000) {
+    return;
+  }
+
+  ultimaTentativaMQTT = millis();
+
+  Serial.print("Conectando ao broker MQTT... ");
+
+  if (mqtt.connect("smartenergy-a01-wokwi-48271")) {
+  Serial.println("MQTT conectado!");
+
+  if (mqtt.subscribe(topicoComando)) {
+    Serial.println("Inscrito no topic de comandos!");
+  } else {
+    Serial.println("Falha ao inscrever no topic.");
+  }
+} else {
+    Serial.print("Falha MQTT. Codigo: ");
+    Serial.println(mqtt.state());
+  }
+}
+
+void publicarEstado() {
+
+  if (!mqtt.connected()) {
+    return;
+  }
+
+  // Envia atualizacoes a cada 3 segundos
+  if (millis() - ultimaPublicacao < 3000) {
+    return;
+  }
+
+  ultimaPublicacao = millis();
+
+  String mensagem = "{";
+  mensagem += "\"predio\":\"A\",";
+  mensagem += "\"sala\":\"A01\",";
+
+  mensagem += "\"movimento\":";
+  mensagem += (digitalRead(sensorPIR) == HIGH
+               ? "true" : "false");
+
+  mensagem += ",\"iluminacao\":";
+  mensagem += (luzLigada ? "true" : "false");
+
+  mensagem += ",\"ar_condicionado\":";
+  mensagem += (arLigado ? "true" : "false");
+
+  mensagem += ",\"alerta\":";
+  mensagem += (alertaGerado ? "true" : "false");
+
+  mensagem += "}";
+
+  bool enviado = mqtt.publish(
+    topicoEstado,
+    mensagem.c_str()
+  );
+
+  if (enviado) {
+    Serial.println("MQTT: " + mensagem);
+  } else {
+    Serial.println("Falha ao publicar MQTT.");
+  }
+}
+
+void receberComando(char* topico, byte* payload,
+                    unsigned int tamanho) {
+
+  if (String(topico) != topicoComando) {
+    return;
+  }
+
+  String comando = "";
+
+  for (unsigned int i = 0; i < tamanho; i++) {
+    comando += (char)payload[i];
+  }
+
+  Serial.print("Comando recebido: ");
+  Serial.println(comando);
+
+  if (comando == "LUZ_ON") {
+    luzLigada = true;
+
+  } else if (comando == "LUZ_OFF") {
+    luzLigada = false;
+
+  } else if (comando == "AR_ON") {
+    arLigado = true;
+
+  } else if (comando == "AR_OFF") {
+    arLigado = false;
+
+  } else if (comando == "DESLIGAR_TUDO") {
+    luzLigada = false;
+    arLigado = false;
+
+  } else {
+    Serial.println("Comando desconhecido!");
+    return;
+  }
+
+  atualizarEquipamentos();
+  mostrarEstados();
+
+  Serial.println("Comando executado!");
+}
+
 void setup() {
   Serial.begin(115200);
+
+  conectarWiFi();
+  mqtt.setServer(servidorMQTT, portaMQTT);
+  
+  mqtt.setCallback(receberComando);
 
   pinMode(sensorPIR, INPUT);
 
@@ -63,6 +234,12 @@ void setup() {
 }
 
 void loop() {
+
+conectarMQTT();
+
+if (mqtt.connected()) {
+  mqtt.loop();
+}
 
   unsigned long agora = millis();
 
@@ -204,6 +381,8 @@ void loop() {
     Serial.println("Equipamento religado.");
     Serial.println("Nova contagem iniciada.");
   }
+
+  publicarEstado();
 
   delay(20);
 }
