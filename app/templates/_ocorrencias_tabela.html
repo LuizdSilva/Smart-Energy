@@ -1,0 +1,28 @@
+{% if ocorrencias %}
+<div class="table-responsive">
+  <table class="table table-sm table-se align-middle mb-0">
+    <thead>
+      <tr><th>#</th><th>Prédio</th><th>Sala</th><th>Início</th><th>Fim</th><th>Equipamentos ligados</th><th>Situação</th><th>Como foi resolvida</th></tr>
+    </thead>
+    <tbody>
+      {% for o in ocorrencias %}
+      <tr>
+        <td>{{ o.id }}</td>
+        <td>{{ o.predio }}</td>
+        <td>{{ o.sala }}</td>
+        <td>{{ o.ts_inicio|local_dt }}</td>
+        <td>{{ o.ts_fim|local_dt }}</td>
+        <td>{{ (o.equipamentos_ligados|fromjson)|join(", ") or "—" }}</td>
+        <td>
+          {% if o.status == "aberta" %}<span class="badge-se b-atencao">Aberta</span>
+          {% else %}<span class="badge-se b-normal">Resolvida</span>{% endif %}
+        </td>
+        <td>{{ o.resolucao|resolucao }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-muted mb-0">Nenhuma ocorrência registrada{% if status in ("aberta", "resolvida") %} com esse filtro{% endif %}.</p>
+{% endif %}

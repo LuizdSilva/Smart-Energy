@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-3">
+
+  <div class="col-6">
+    <div class="se-card">
+      <h2><i class="bi bi-database me-2"></i>Origem dos dados</h2>
+      <table class="table table-sm table-se align-middle mb-0">
+        <thead><tr><th>Dado</th><th>Origem</th><th class="text-end">Registros</th></tr></thead>
+        <tbody>
+          <tr><td>Consumo mensal</td><td><span class="badge-se b-normal">real</span></td><td class="text-end">{{ counts.consumo_mensal }}</td></tr>
+          <tr><td>Geração anual</td><td><span class="badge-se b-normal">real</span></td><td class="text-end">{{ counts.geracao_anual }}</td></tr>
+          <tr><td>Salas (estado)</td><td><span class="badge-se b-sim">simulado</span></td><td class="text-end">{{ counts.salas }}</td></tr>
+          <tr><td>Leituras</td><td><span class="badge-se b-sim">simulado</span></td><td class="text-end">{{ counts.leituras }}</td></tr>
+          <tr><td>Ocorrências</td><td><span class="badge-se b-sim">simulado</span></td><td class="text-end">{{ counts.ocorrencias }}</td></tr>
+          <tr><td>Comandos</td><td><span class="badge-se b-sim">simulado</span></td><td class="text-end">{{ counts.comandos }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="col-6">
+    <div class="se-card">
+      <h2><i class="bi bi-broadcast me-2"></i>Status do MQTT</h2>
+      {% if not mqtt_enabled or not mqtt %}
+        <p class="mb-0">MQTT desativado (<code>MQTT_ENABLED=0</code> no <code>.env</code>).</p>
+      {% else %}
+        <table class="table table-sm table-se align-middle mb-0">
+          <tbody>
+            <tr><th>Conexão</th><td>
+              {% if mqtt.conectado %}<span class="badge-se b-normal">Conectado</span>
+              {% else %}<span class="badge-se b-sim">Desconectado</span>{% endif %}</td></tr>
+            <tr><th>Broker</th><td><code>{{ mqtt.broker }}</code></td></tr>
+            <tr><th>Tópico assinado</th><td><code>{{ mqtt.topico_estado }}</code></td></tr>
+            <tr><th>Última mensagem</th><td>{{ mqtt.ultima_mensagem|local_dt if mqtt.ultima_mensagem else "—" }}</td></tr>
+            <tr><th>Mensagens válidas</th><td>{{ mqtt.mensagens_ok }}</td></tr>
+            <tr><th>Mensagens descartadas</th><td>{{ mqtt.mensagens_descartadas }}</td></tr>
+            {% if mqtt.erro %}<tr><th>Erro</th><td class="text-danger">{{ mqtt.erro }}</td></tr>{% endif %}
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-6" id="importar">
+    <div class="se-card">
+      <h2><i class="bi bi-upload me-2"></i>Importar consumo mensal (CSV)</h2>
+      <form method="post" action="{{ url_for('main.dados_importar') }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="file" name="arquivo" accept=".csv" class="form-control mb-3" required>
+        <button class="btn btn-primary"><i class="bi bi-upload me-1"></i>Importar</button>
+      </form>
+      <p class="small text-muted mt-3 mb-0">
+        O arquivo CSV deve ter 3 colunas: <code>ano;mes;kwh</code>. Pode separar por <code>;</code> ou <code>,</code>.
+        Se o mês já existir, o valor é atualizado. Se houver erro em alguma linha, nada é importado.
+      </p>
+    </div>
+  </div>
+
+  <div class="col-6">
+    <div class="se-card">
+      <h2><i class="bi bi-trash me-2"></i>Apagar dados simulados</h2>
+      <p class="small">Remove salas, leituras, ocorrências e comandos vindos do ESP32/simulador. Os dados reais são preservados.</p>
+      <form method="post" action="{{ url_for('main.dados_limpar') }}"
+            onsubmit="return confirm('Apagar todos os dados simulados?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-outline-danger"><i class="bi bi-trash me-1"></i>Apagar simulados</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
