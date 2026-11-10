@@ -9,46 +9,35 @@ ACOES = ("ligar", "desligar")
 CAMPOS_BOOLEANOS = ("movimento", "iluminacao", "ar_condicionado", "alerta")
 ALERTA_RECENTE_S = 120
 
-
 BLOCOS = ("A", "C", "E", "G", "I", "K", "L")
 SALA_VALIDA = re.compile(r"[A-Z][0-9]{1,3}")
-
 
 def sala_pertence_ao_bloco(predio: str, sala: str) -> bool:
     return predio in BLOCOS and SALA_VALIDA.fullmatch(sala) is not None and sala[0] == predio
 
-
 def agora_utc() -> datetime:
     return datetime.now(timezone.utc)
-
 
 def data_para_texto(data: datetime) -> str:
     return data.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
-
 def texto_para_data(texto: str) -> datetime:
     return datetime.fromisoformat(texto.replace("Z", "+00:00"))
-
 
 class EstadoInvalido(ValueError):
     pass
 
-
 class SalaNaoCadastrada(ValueError):
     pass
-
 
 class CadastroInvalido(ValueError):
     pass
 
-
 class ComandoInvalido(ValueError):
     pass
 
-
 def nome_no_topico(sala: str) -> str:
     return f"sala-{sala.lower()}"
-
 
 def validar_estado(mensagem, topico_sala: str | None = None) -> dict:
     if not isinstance(mensagem, dict):
@@ -71,11 +60,9 @@ def validar_estado(mensagem, topico_sala: str | None = None) -> dict:
         raise EstadoInvalido(f"a sala {estado['sala']} não corresponde ao tópico {topico_sala}")
     return estado
 
-
 def sala_cadastrada(conn: sqlite3.Connection, predio: str, sala: str) -> bool:
     linha = conn.execute("SELECT 1 FROM salas_cadastradas WHERE predio=? AND sala=?", (predio, sala)).fetchone()
     return linha is not None
-
 
 def cadastrar_sala(conn: sqlite3.Connection, predio: str, sala: str, descricao: str = "") -> tuple[str, str]:
     predio = (predio or "").strip().upper()
@@ -101,7 +88,6 @@ def cadastrar_sala(conn: sqlite3.Connection, predio: str, sala: str, descricao: 
         )
     return predio, sala
 
-
 def remover_sala(conn: sqlite3.Connection, predio: str, sala: str) -> None:
     predio, sala = (predio or "").upper(), (sala or "").upper()
     if not sala_cadastrada(conn, predio, sala):
@@ -118,7 +104,6 @@ def remover_sala(conn: sqlite3.Connection, predio: str, sala: str) -> None:
             "WHERE predio=? AND sala=? AND status='aberta'",
             (agora, predio, sala),
         )
-
 
 def registrar_comando(conn: sqlite3.Connection, predio: str, sala: str, equipamento: str, acao: str,
                       agora: datetime | None = None) -> int:
@@ -139,24 +124,20 @@ def registrar_comando(conn: sqlite3.Connection, predio: str, sala: str, equipame
         )
     return cursor.lastrowid
 
-
 def marcar_comando_falhou(conn: sqlite3.Connection, comando_id: int) -> None:
     with conn:
         conn.execute("UPDATE comandos SET status='falhou' WHERE id=?", (comando_id,))
-
 
 def expirar_comandos(conn: sqlite3.Connection, timeout_s: int, agora: datetime | None = None) -> None:
     limite = data_para_texto((agora or agora_utc()) - timedelta(seconds=timeout_s))
     with conn:
         conn.execute("UPDATE comandos SET status='expirado' WHERE status='enviado' AND ts < ?", (limite,))
 
-
 def _efeito_esperado(equipamento: str, acao: str) -> dict:
     ligado = acao == "ligar"
     if equipamento == "todos":
         return {"iluminacao": ligado, "ar_condicionado": ligado}
     return {equipamento: ligado}
-
 
 def processar_estado(conn: sqlite3.Connection, estado: dict, agora: datetime | None = None,
                      intervalo_gravacao_s: int = 60, timeout_comando_s: int = 10) -> dict:
@@ -174,7 +155,6 @@ def processar_estado(conn: sqlite3.Connection, estado: dict, agora: datetime | N
         _atualizar_ocorrencia(conn, estado, agora, alerta_anterior, resultado)
     return resultado
 
-
 def _salvar_estado(conn, estado: dict, agora: datetime) -> bool:
     anterior = conn.execute(
         "SELECT alerta FROM salas WHERE predio=? AND sala=?", (estado["predio"], estado["sala"])
@@ -190,7 +170,6 @@ def _salvar_estado(conn, estado: dict, agora: datetime) -> bool:
          estado["ar_condicionado"], estado["alerta"], data_para_texto(agora)),
     )
     return bool(anterior and anterior["alerta"])
-
 
 def _salvar_leitura(conn, estado: dict, agora: datetime, intervalo_s: int) -> None:
     ultima = conn.execute(
@@ -209,7 +188,6 @@ def _salvar_leitura(conn, estado: dict, agora: datetime, intervalo_s: int) -> No
          estado["iluminacao"], estado["ar_condicionado"], estado["alerta"]),
     )
 
-
 def _confirmar_comandos(conn, estado: dict, agora: datetime) -> list[int]:
     pendentes = conn.execute(
         "SELECT id, equipamento, acao FROM comandos WHERE predio=? AND sala=? AND status='enviado'",
@@ -225,7 +203,6 @@ def _confirmar_comandos(conn, estado: dict, agora: datetime) -> list[int]:
             )
             confirmados.append(c["id"])
     return confirmados
-
 
 def _atualizar_ocorrencia(conn, estado: dict, agora: datetime, alerta_anterior: bool, resultado: dict) -> None:
     predio, sala, ts = estado["predio"], estado["sala"], data_para_texto(agora)
@@ -270,7 +247,6 @@ def _atualizar_ocorrencia(conn, estado: dict, agora: datetime, alerta_anterior: 
         (ts, motivo, aberta["id"]),
     )
     resultado["fechou"] = (aberta["id"], motivo)
-
 
 def listar_salas(conn: sqlite3.Connection, offline_apos_s: int, timeout_comando_s: int,
                  agora: datetime | None = None) -> list[dict]:

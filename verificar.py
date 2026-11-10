@@ -8,12 +8,10 @@ os.environ["MQTT_ENABLED"] = "0"
 sys.path.insert(0, str(RAIZ))
 falhas = []
 
-
 def ok(cond, msg):
     print(("  [OK]    " if cond else "  [FALHA] ") + msg)
     if not cond:
         falhas.append(msg)
-
 
 print("1) Ambiente")
 ok(sys.version_info >= (3, 8), f"Python {sys.version.split()[0]}")

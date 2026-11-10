@@ -31,7 +31,6 @@
               {% if mqtt.conectado %}<span class="badge-se b-normal">Conectado</span>
               {% else %}<span class="badge-se b-sim">Desconectado</span>{% endif %}</td></tr>
             <tr><th>Broker</th><td><code>{{ mqtt.broker }}</code></td></tr>
-            <tr><th>Tópico assinado</th><td><code>{{ mqtt.topico_estado }}</code></td></tr>
             <tr><th>Última mensagem</th><td>{{ mqtt.ultima_mensagem|local_dt if mqtt.ultima_mensagem else "—" }}</td></tr>
             <tr><th>Mensagens válidas</th><td>{{ mqtt.mensagens_ok }}</td></tr>
             <tr><th>Mensagens descartadas</th><td>{{ mqtt.mensagens_descartadas }}</td></tr>
@@ -50,10 +49,6 @@
         <input type="file" name="arquivo" accept=".csv" class="form-control mb-3" required>
         <button class="btn btn-primary"><i class="bi bi-upload me-1"></i>Importar</button>
       </form>
-      <p class="small text-muted mt-3 mb-0">
-        O arquivo CSV deve ter 3 colunas: <code>ano;mes;kwh</code>. Pode separar por <code>;</code> ou <code>,</code>.
-        Se o mês já existir, o valor é atualizado. Se houver erro em alguma linha, nada é importado.
-      </p>
     </div>
   </div>
 

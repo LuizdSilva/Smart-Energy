@@ -9,7 +9,6 @@ from . import banco_dados, regras_tempo_real
 log = logging.getLogger("smartenergy.mqtt")
 TAMANHO_MAXIMO = 2048
 
-
 class ClienteMqtt:
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -61,7 +60,6 @@ class ClienteMqtt:
         self.conectado = False
         log.warning("MQTT desconectado")
 
-
     def tratar_mensagem(self, topico: str, conteudo: bytes) -> bool:
         partes = topico.split("/")
         base = self.base.split("/")
@@ -98,7 +96,6 @@ class ClienteMqtt:
         self.mensagens_descartadas += 1
         log.warning("mensagem MQTT descartada: %s", motivo)
         return False
-
 
     def publicar_comando(self, sala: str, equipamento: str, acao: str) -> bool:
         if not self.client or not self.conectado:

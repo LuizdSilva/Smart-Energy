@@ -6,15 +6,12 @@ from app.cliente_mqtt import ClienteMqtt
 BASE = "smartenergy/facens/demo-48271"
 GOOD = {"predio": "A", "sala": "A01", "movimento": False, "iluminacao": True, "ar_condicionado": True, "alerta": False}
 
-
 def svc(app):
     return ClienteMqtt(app.config)
-
 
 def test_login_required(client):
     assert client.get("/").status_code == 302
     assert client.get("/api/salas").status_code == 401
-
 
 def test_login_wrong_password(client):
     client.get("/login")
@@ -23,11 +20,9 @@ def test_login_wrong_password(client):
     r = client.post("/login", data={"usuario": "u", "senha": "x", "csrf_token": tok})
     assert r.status_code == 200 and b"inv\xc3\xa1lidos" in r.data
 
-
 def test_post_without_csrf_rejected(auth):
     assert auth.post("/api/salas/A/A01/comando", json={}).status_code == 403
     assert auth.post("/logout").status_code == 400
-
 
 def test_all_pages_render(auth):
     for url in ("/", "/tempo-real", "/consumo", "/geracao-solar", "/anomalias", "/dados",
@@ -41,7 +36,6 @@ def test_all_pages_render(auth):
     assert 'id="kpi-online"' in auth.get("/tempo-real").data.decode()
     assert "Ocorrências abertas" in auth.get("/anomalias").data.decode()
 
-
 def test_home_is_powerbi_only(app, auth):
     html = auth.get("/").data.decode()
     assert "Bem-vindo ao SMART ENERGY" in html
@@ -51,13 +45,11 @@ def test_home_is_powerbi_only(app, auth):
     app.config["POWERBI_EMBED_URL"] = "https://app.powerbi.com/reportEmbed?reportId=abc"
     assert "<iframe" in auth.get("/").data.decode()
 
-
 def test_powerbi_embed_only_on_home(app, auth):
     app.config["POWERBI_EMBED_URL"] = "https://app.powerbi.com/reportEmbed?reportId=abc"
     assert "reportEmbed" in auth.get("/").data.decode()
     for url in ("/consumo", "/tempo-real", "/dados"):
         assert "reportEmbed" not in auth.get(url).data.decode()
-
 
 def test_mqtt_message_flow_and_rejections(app, conn):
     s = svc(app)
@@ -69,7 +61,6 @@ def test_mqtt_message_flow_and_rejections(app, conn):
     assert not s.tratar_mensagem(f"{BASE}/sala-a01/comando", json.dumps(GOOD).encode())
     assert not s.tratar_mensagem(f"{BASE}/sala-a01/estado", b"x" * 3000)
     assert s.mensagens_ok == 1 and s.mensagens_descartadas == 5
-
 
 def test_command_api_flow(app, auth, conn):
     regras_tempo_real.processar_estado(conn, regras_tempo_real.validar_estado(GOOD))
@@ -83,7 +74,6 @@ def test_command_api_flow(app, auth, conn):
     snap = auth.get("/api/salas").get_json()["salas"][0]
     assert snap["comandos_pendentes"] == [] and snap["iluminacao"] is False
 
-
 def test_command_api_errors(app, auth, conn):
     h = {"X-CSRF-Token": auth.csrf}
     assert auth.post("/api/salas/L/L99/comando", json={"equipamento": "todos", "acao": "desligar"},
@@ -96,7 +86,6 @@ def test_command_api_errors(app, auth, conn):
     assert r.status_code == 503
     assert conn.execute("SELECT status FROM comandos").fetchone()[0] == "falhou"
 
-
 def test_csv_import_valid_and_invalid(auth, conn):
     h = {"csrf_token": auth.csrf}
     import io
@@ -107,13 +96,11 @@ def test_csv_import_valid_and_invalid(auth, conn):
     auth.post("/dados/importar", data={**h, "arquivo": (bad, "y.csv")}, content_type="multipart/form-data")
     assert conn.execute("SELECT COUNT(*) FROM consumo_mensal WHERE ano=2025").fetchone()[0] == 2
 
-
 def test_clear_simulated_keeps_real(auth, conn):
     regras_tempo_real.processar_estado(conn, regras_tempo_real.validar_estado({**GOOD, "alerta": True}))
     auth.post("/dados/limpar-simulados", data={"csrf_token": auth.csrf})
     assert conn.execute("SELECT COUNT(*) FROM salas").fetchone()[0] == 0
     assert conn.execute("SELECT COUNT(*) FROM consumo_mensal").fetchone()[0] == 12
-
 
 def test_exports(auth):
     for t in ("consumo", "ocorrencias"):
@@ -121,11 +108,9 @@ def test_exports(auth):
         assert r.status_code == 200 and r.mimetype == "text/csv"
     assert auth.get("/exportar/x.csv").status_code == 404
 
-
 def test_csrf_header_non_ascii_does_not_crash(auth):
     r = auth.post("/api/salas/A/A01/comando", json={}, headers={"X-CSRF-Token": "çã"})
     assert r.status_code == 403
-
 
 def test_csv_rejects_infinity(auth, conn):
     import io
@@ -134,10 +119,9 @@ def test_csv_rejects_infinity(auth, conn):
               content_type="multipart/form-data")
     assert conn.execute("SELECT COUNT(*) FROM consumo_mensal WHERE ano=2025").fetchone()[0] == 0
 
-
 def test_room_registration_flow(auth, conn):
     h = {"csrf_token": auth.csrf}
-
+    
     assert "A01" in auth.get("/salas").data.decode()
     auth.post("/salas/cadastrar", data={**h, "predio": "l", "sala": "l15", "descricao": "Lab"})
     assert conn.execute("SELECT predio, sala FROM salas_cadastradas WHERE sala='L15'").fetchone()[0] == "L"
@@ -156,14 +140,12 @@ def test_room_registration_flow(auth, conn):
     assert conn.execute("SELECT COUNT(*) FROM salas WHERE sala='L15'").fetchone()[0] == 0
     assert conn.execute("SELECT status, resolucao FROM ocorrencias WHERE sala='L15'").fetchone()["resolucao"] == "sala_removida"
 
-
 def test_removed_default_room_not_recreated_on_restart(app, auth, conn):
     from app import create_app
     auth.post("/salas/remover", data={"csrf_token": auth.csrf, "predio": "A", "sala": "A01"})
     create_app({"TESTING": True, "DB_PATH": app.config["DB_PATH"], "MQTT_ENABLED": False,
                 "APP_USER": "u", "APP_PASSWORD": "p", "SECRET_KEY": "k"})
     assert conn.execute("SELECT COUNT(*) FROM salas_cadastradas").fetchone()[0] == 0
-
 
 def test_mqtt_state_from_unregistered_room_is_discarded(app, conn):
     s = svc(app)

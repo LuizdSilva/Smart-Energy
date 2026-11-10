@@ -23,7 +23,6 @@ async function apiPost(url, corpo) {
   }
   return {ok: resposta.ok, status: resposta.status, data};
 }
-
 if (window.Chart) {
   Chart.defaults.font.family = '"Segoe UI", system-ui, sans-serif';
 }

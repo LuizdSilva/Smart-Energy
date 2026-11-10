@@ -5,7 +5,6 @@ import time
 
 import paho.mqtt.client as mqtt
 
-
 class Sala:
 
     def __init__(self, limite_s: float):
@@ -55,7 +54,6 @@ class Sala:
         else:
             return False
         return True
-
 
 def main() -> None:
     p = argparse.ArgumentParser(description="Simulador de sala com ESP32")
@@ -115,7 +113,6 @@ def main() -> None:
     finally:
         cliente.loop_stop()
         cliente.disconnect()
-
 
 if __name__ == "__main__":
     main()

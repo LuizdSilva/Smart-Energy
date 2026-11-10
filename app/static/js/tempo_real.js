@@ -137,6 +137,5 @@ async function atualizar() {
     statusMqtt.className = 'small text-danger';
   }
 }
-
 atualizar();
 setInterval(atualizar, 2000);

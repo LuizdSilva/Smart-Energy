@@ -12,7 +12,6 @@ from flask import Flask, jsonify, request, session, redirect, url_for, abort
 from . import banco_dados
 from .configuracoes import Config
 
-
 LOCAL_TZ = timezone(timedelta(hours=-3))
 
 RESOLUCOES = {
@@ -22,7 +21,6 @@ RESOLUCOES = {
     "alerta_encerrado_no_esp32": "Alerta encerrado (presença / nova contagem)",
     "sala_removida": "Sala removida do cadastro",
 }
-
 
 NAV = [
     ("visao_geral", "Visão Geral", "bi-house-door-fill", "main.visao_geral", False),
@@ -34,20 +32,17 @@ NAV = [
     ("dados", "Gerenciamento de Dados", "bi-database", "main.dados", False),
 ]
 
-
 def br_number(value, decimals=0):
     if value is None:
         return "—"
     s = f"{value:,.{decimals}f}"
     return s.replace(",", "X").replace(".", ",").replace("X", ".")
 
-
 def local_dt(value):
     if not value:
         return "—"
     dt = datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(LOCAL_TZ)
     return dt.strftime("%d/%m/%Y %H:%M:%S")
-
 
 def create_app(overrides: dict | None = None) -> Flask:
     aqui = Path(__file__).resolve().parent
@@ -74,7 +69,6 @@ def create_app(overrides: dict | None = None) -> Flask:
         cliente = ClienteMqtt(app.config)
         cliente.iniciar()
         app.extensions["mqtt"] = cliente
-
 
     def csrf_token() -> str:
         if "csrf" not in session:

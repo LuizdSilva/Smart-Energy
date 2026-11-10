@@ -19,7 +19,6 @@ if (dadosEl) {
       scales: {y: {beginAtZero: true, title: {display: true, text: 'Energia (kWh)'}}},
     },
   });
-
   new Chart(document.getElementById('chart-desvio'), {
     type: 'bar',
     data: {

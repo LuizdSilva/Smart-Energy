@@ -13,14 +13,11 @@ from . import analise_dados_reais, banco_dados, regras_tempo_real
 
 bp = Blueprint("main", __name__)
 
-
 def _conn() -> sqlite3.Connection:
     return banco_dados.connect(current_app.config["DB_PATH"])
 
-
 def _cfg(key):
     return current_app.config[key]
-
 
 def _ano(conn) -> int | None:
     anos = analise_dados_reais.anos_disponiveis(conn)
@@ -30,12 +27,10 @@ def _ano(conn) -> int | None:
         ano = None
     return ano if ano in anos else (anos[0] if anos else None)
 
-
 def _page(conn, template, ativo, titulo, subtitulo, **ctx):
     anos = analise_dados_reais.anos_disponiveis(conn)
     return render_template(template, ativo=ativo, titulo=titulo, subtitulo=subtitulo,
                            anos=anos, ano_sel=_ano(conn), **ctx)
-
 
 _LOGIN_SIMPLES = """<!doctype html><meta charset="utf-8"><title>Entrar</title>
 <body style="font-family:sans-serif;max-width:340px;margin:80px auto"><h2>SMART ENERGY FACENS</h2>
@@ -44,17 +39,14 @@ _LOGIN_SIMPLES = """<!doctype html><meta charset="utf-8"><title>Entrar</title>
 <p>Senha<br><input name="senha" type="password" required style="width:100%"></p>
 <button>Entrar</button></form></body>"""
 
-
 def _csrf_da_sessao() -> str:
     import secrets
     return session.setdefault("csrf", secrets.token_hex(16))
-
 
 @bp.get("/saude")
 def saude():
     import os
     return f"SMART ENERGY OK - processo {os.getpid()}", 200, {"Content-Type": "text/plain; charset=utf-8"}
-
 
 @bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -73,12 +65,10 @@ def login():
         current_app.logger.exception("Falha ao desenhar login.html; usando formulário simples")
         return _LOGIN_SIMPLES.replace("__CSRF__", _csrf_da_sessao())
 
-
 @bp.post("/logout")
 def logout():
     session.clear()
     return redirect(url_for("main.login"))
-
 
 @bp.get("/")
 def visao_geral():
@@ -88,7 +78,6 @@ def visao_geral():
     finally:
         conn.close()
 
-
 @bp.get("/tempo-real")
 def tempo_real():
     conn = _conn()
@@ -97,7 +86,6 @@ def tempo_real():
                      "Estado das salas via MQTT (dados SIMULADOS pelo ESP32/Wokwi)")
     finally:
         conn.close()
-
 
 @bp.get("/salas")
 def cadastro_salas():
@@ -109,7 +97,6 @@ def cadastro_salas():
                      salas=salas, blocos=regras_tempo_real.BLOCOS, topico_base=_cfg("MQTT_BASE_TOPIC"), slug=regras_tempo_real.nome_no_topico)
     finally:
         conn.close()
-
 
 @bp.post("/salas/cadastrar")
 def salas_cadastrar():
@@ -125,7 +112,6 @@ def salas_cadastrar():
         conn.close()
     return redirect(url_for("main.cadastro_salas"))
 
-
 @bp.post("/salas/remover")
 def salas_remover():
     conn = _conn()
@@ -139,7 +125,6 @@ def salas_remover():
         conn.close()
     return redirect(url_for("main.cadastro_salas"))
 
-
 @bp.get("/consumo")
 def consumo():
     conn = _conn()
@@ -150,7 +135,6 @@ def consumo():
                      "Consumo elétrico mensal da FACENS (dados reais)", cons=cons)
     finally:
         conn.close()
-
 
 @bp.get("/geracao-solar")
 def solar():
@@ -163,7 +147,6 @@ def solar():
                      "Geração renovável da FACENS (dados reais)", cons=cons, ger=ger)
     finally:
         conn.close()
-
 
 @bp.get("/anomalias")
 def anomalias():
@@ -183,7 +166,6 @@ def anomalias():
     finally:
         conn.close()
 
-
 def _csv_response(name, header, rows):
     buf = io.StringIO()
     w = csv.writer(buf, delimiter=";")
@@ -191,7 +173,6 @@ def _csv_response(name, header, rows):
     w.writerows(rows)
     return Response("﻿" + buf.getvalue(), mimetype="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f"attachment; filename={name}"})
-
 
 @bp.get("/exportar/<tipo>.csv")
 def exportar(tipo):
@@ -210,7 +191,6 @@ def exportar(tipo):
     finally:
         conn.close()
 
-
 @bp.get("/dados")
 def dados():
     conn = _conn()
@@ -224,7 +204,6 @@ def dados():
                      mqtt_enabled=_cfg("MQTT_ENABLED"))
     finally:
         conn.close()
-
 
 @bp.post("/dados/importar")
 def dados_importar():
@@ -260,7 +239,6 @@ def dados_importar():
         conn.close()
     return redirect(url_for("main.dados"))
 
-
 @bp.post("/dados/limpar-simulados")
 def dados_limpar():
     conn = _conn()
@@ -273,7 +251,6 @@ def dados_limpar():
         conn.close()
     return redirect(url_for("main.dados"))
 
-
 @bp.get("/api/salas")
 def api_salas():
     conn = _conn()
@@ -282,7 +259,6 @@ def api_salas():
         return jsonify(salas=salas)
     finally:
         conn.close()
-
 
 @bp.post("/api/salas/<predio>/<sala>/comando")
 def api_comando(predio, sala):
@@ -306,7 +282,6 @@ def api_comando(predio, sala):
     finally:
         conn.close()
 
-
 @bp.get("/api/ocorrencias")
 def api_ocorrencias():
     conn = _conn()
@@ -320,7 +295,6 @@ def api_ocorrencias():
         return jsonify(ocorrencias=ocorrencias)
     finally:
         conn.close()
-
 
 @bp.get("/api/status")
 def api_status():

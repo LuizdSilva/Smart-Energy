@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="row g-3">
-
   <div class="col-4">
     <div class="se-card">
       <h2><i class="bi bi-plus-circle me-2"></i>Nova sala</h2>
@@ -24,12 +23,10 @@
         <button class="btn btn-primary w-100"><i class="bi bi-check2 me-1"></i>Cadastrar sala</button>
       </form>
       <p class="small text-muted mt-3 mb-0">
-        O código da sala forma o tópico MQTT do ESP32 (<code>sala-l15</code>), por isso não pode repetir.
         O ESP32 precisa enviar <code>"predio"</code> e <code>"sala"</code> iguais aos do cadastro.
       </p>
     </div>
   </div>
-
   <div class="col-8">
     <div class="se-card">
       <h2><i class="bi bi-building me-2"></i>Salas cadastradas ({{ salas|length }})</h2>
@@ -62,12 +59,6 @@
               </form>
             </td>
           </tr>
-          <tr>
-            <td colspan="5" class="small text-muted border-0 pt-0">
-              Estado: <code>{{ topico_base }}/{{ slug(s.sala) }}/estado</code> ·
-              Comando: <code>{{ topico_base }}/{{ slug(s.sala) }}/comando</code>
-            </td>
-          </tr>
           {% else %}
           <tr>
             <td colspan="5" class="text-center text-muted py-4">Nenhuma sala cadastrada. Use o formulário ao lado.</td>
@@ -77,6 +68,5 @@
       </table>
     </div>
   </div>
-
 </div>
 {% endblock %}

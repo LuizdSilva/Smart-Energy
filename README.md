@@ -1,23 +1,34 @@
-# Como rodar o SMART ENERGY
+# SMART ENERGY
+Sistema web de monitoramento de energia da FACENS. Mostra consumo mensal, geração solar, anomalias e o estado das salas em tempo real (ESP32 via MQTT), além de um relatório Power BI incorporado na página inicial.
 
-## O que você precisa
-- Python 3.8 ou mais novo (https://www.python.org/downloads/). No Windows, marque "Add Python to PATH" na instalação.
-- Internet (para o Power BI e para o MQTT).
+## Tecnologias
+- Python 3.8+ e Flask
+- SQLite
+- MQTT (paho-mqtt), com ESP32 ou simulador
+- HTML, CSS, Bootstrap e Chart.js
+- Power BI 
 
-## Passo a passo
+## Como rodar
 
-1. Instale as dependências (só na primeira vez):
+**Requisitos:** Python 3.8+ e internet, para o Power BI e o MQTT.
+
+1. Abra um terminal na pasta do projeto e instale as dependências (só na primeira vez):
    pip install -r requirements.txt
    
-
-3. Inicie o sistema:
+2. Inicie o sistema:
    python iniciar_sistema.py
    
-
-4. Abra no navegador o endereço que aparece no terminal:
+3. Endereço no navegador
    http://127.0.0.1:5000/login
-  
-
-5. Entre com:
+   
+4. Entre com:
    - Usuário: `facens`
    - Senha: `facens123`
+
+## Integrantes
+- Gabriela Oliveira Lino
+- Kayky Fraga da Silva
+- Luiz Augusto Castilho Pereira da Silva
+- Matheus Henrique dos Santos
+- Otávio Lutz Nunes de Souza
+- Sérgio Luíz da Silva

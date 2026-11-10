@@ -82,14 +82,12 @@ CREATE TABLE IF NOT EXISTS comandos (
 
 SALAS_INICIAIS = [("A", "A01", "Sala de demonstração")]
 
-
 def connect(caminho: str) -> sqlite3.Connection:
     Path(caminho).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(caminho, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     return conn
-
 
 def init_db(caminho: str, arquivo_dados: str) -> None:
     conn = connect(caminho)
@@ -101,10 +99,8 @@ def init_db(caminho: str, arquivo_dados: str) -> None:
     finally:
         conn.close()
 
-
 def cadastrar_salas_iniciais(conn: sqlite3.Connection) -> None:
-
-
+    
     if conn.execute("PRAGMA user_version").fetchone()[0] != 0:
         return
     with conn:
@@ -114,7 +110,6 @@ def cadastrar_salas_iniciais(conn: sqlite3.Connection) -> None:
                 (predio, sala, descricao, data_para_texto(agora_utc())),
             )
         conn.execute("PRAGMA user_version = 1")
-
 
 def carregar_dados_reais(conn: sqlite3.Connection, arquivo: str) -> None:
     dados = json.loads(Path(arquivo).read_text(encoding="utf-8"))

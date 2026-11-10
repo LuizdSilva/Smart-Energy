@@ -17,7 +17,6 @@ if (location.pathname !== '/login') {
     } catch (erro) {
     }
   }
-
   function mostrarAviso(sala) {
     const aviso = document.createElement('div');
     aviso.className = 'alert alert-' + (sala.acao_necessaria ? 'danger' : 'warning') + ' alert-dismissible shadow';
@@ -57,7 +56,6 @@ if (location.pathname !== '/login') {
     } catch (erro) {
     }
   }
-
   verificarSalas();
   setInterval(verificarSalas, 3000);
 }

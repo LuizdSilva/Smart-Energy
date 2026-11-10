@@ -5,11 +5,9 @@ MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "
 MESES_LONGOS = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
 
-
 def anos_disponiveis(conn: sqlite3.Connection) -> list[int]:
     linhas = conn.execute("SELECT DISTINCT ano FROM consumo_mensal ORDER BY ano DESC")
     return [linha[0] for linha in linhas]
-
 
 def consumo_ano(conn: sqlite3.Connection, ano: int) -> dict | None:
     linhas = conn.execute("SELECT mes, kwh FROM consumo_mensal WHERE ano=? ORDER BY mes", (ano,)).fetchall()
@@ -40,7 +38,6 @@ def consumo_ano(conn: sqlite3.Connection, ano: int) -> dict | None:
         "maior": max(meses, key=lambda m: m["kwh"]),
         "menor": min(meses, key=lambda m: m["kwh"]),
     }
-
 
 def geracao_ano(conn: sqlite3.Connection, ano: int, consumo_total: float | None) -> dict:
     fontes = {linha["fonte"]: dict(linha) for linha in conn.execute("SELECT * FROM geracao_anual WHERE ano=?", (ano,))}

@@ -50,11 +50,6 @@
       {% endfor %}
     </tbody>
   </table>
-  <p class="small mt-3 mb-0">
-    <b>Todas as fontes ÷ consumo:</b> {{ ger.renovavel_pct_total|br(2) }}%.
-    É maior que os {{ ger.solar_pct|br(2) }}% da solar porque soma também biogás, biodiesel e eólica
-    (as duas últimas são capacidade, não produção).
-  </p>
 </div>
 {% else %}
 <div class="alert alert-warning">Nenhum dado de geração para este ano.</div>
