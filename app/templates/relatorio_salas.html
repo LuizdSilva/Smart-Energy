@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .rel-calor { border-collapse: separate; border-spacing: 2px; font-size: .75rem; }
+  .rel-calor th { font-weight: 500; color: var(--bs-secondary-color); padding: 0 4px; text-align: center; }
+  .rel-calor td { width: 26px; height: 26px; border-radius: 4px; background: var(--bs-secondary-bg); }
+  .rel-barra { height: 100%; background: var(--bs-danger); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .rel-barras { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 120px; align-items: end; }
+  .rel-barras-rotulos { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px;
+                        font-size: .7rem; color: var(--bs-secondary-color); text-align: center; }
+  .rel-kpi { font-size: 1.75rem; font-weight: 600; line-height: 1.1; }
+</style>
+
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-4">
+  <div>
+    <label class="form-label mb-1" for="dias">Período</label>
+    <select class="form-select" id="dias" name="dias" onchange="this.form.submit()">
+      {% for p in periodos %}
+        <option value="{{ p }}" {{ 'selected' if p == dias }}>
+          {{ 'Últimas 24 horas' if p == 1 else 'Últimos ' ~ p ~ ' dias' }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label class="form-label mb-1" for="sala">Sala</label>
+    <select class="form-select" id="sala" name="sala" onchange="this.form.submit()">
+      <option value="">Todas as salas</option>
+      {% for s in rel.salas_disponiveis %}
+        <option value="{{ s.sala }}" {{ 'selected' if s.sala == sala_sel }}>{{ s.sala }} (bloco {{ s.predio }})</option>
+      {% endfor %}
+    </select>
+  </div>
+  <a class="btn btn-outline-secondary ms-auto"
+     href="{{ url_for('main.relatorio_salas_csv', dias=dias, sala=sala_sel or '') }}">
+    <i class="bi bi-download"></i> Baixar CSV
+  </a>
+</form>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Sala com movimento</div>
+      <div class="rel-kpi">{{ rel.totais.presenca_pct|br(1) if rel.totais.presenca_pct is not none else '—' }}{{ '%' if rel.totais.presenca_pct is not none }}</div>
+      <div class="small text-body-secondary">{{ rel.totais.presenca_txt }} de {{ rel.totais.monitorado_txt }} monitoradas</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Ligado com a sala vazia</div>
+      <div class="rel-kpi">{{ rel.totais.vazia_ligada_txt }}</div>
+      <div class="small text-body-secondary">luz {{ rel.totais.luz_vazia_txt }} · ar {{ rel.totais.ar_vazia_txt }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Desperdício estimado</div>
+      <div class="rel-kpi">{{ rel.totais.kwh_desperdicio|br(1) }} kWh</div>
+      <div class="small text-body-secondary">
+        {% if rel.totais.desperdicio_pct is not none %}{{ rel.totais.desperdicio_pct|br(0) }}% da energia dos equipamentos{% else %}sem equipamentos ligados{% endif %}
+      </div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Custo estimado</div>
+      <div class="rel-kpi">R$ {{ rel.totais.custo_desperdicio|br(2) }}</div>
+      <div class="small text-body-secondary">tarifa de R$ {{ rel.premissas.tarifa_kwh|br(2) }}/kWh</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Destaques do período</div>
+  <ul class="list-group list-group-flush">
+    {% for d in rel.destaques %}<li class="list-group-item">{{ d }}</li>{% endfor %}
+  </ul>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Uso e desperdício por sala</div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Sala</th><th>Monitorado</th><th>Com movimento</th>
+          <th>Luz ligada, vazia</th><th>Ar ligado, vazia</th>
+          <th class="text-end">kWh</th><th class="text-end">R$</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rel.salas %}
+        <tr>
+          <td><strong>{{ r.sala }}</strong>{% if r.descricao %}<div class="small text-body-secondary">{{ r.descricao }}</div>{% endif %}</td>
+          {% if r.tem_dados %}
+            <td>{{ r.monitorado_txt }}</td>
+            <td>{{ r.presenca_txt }} <span class="text-body-secondary">({{ r.presenca_pct|br(0) }}%)</span></td>
+            <td>{{ r.luz_vazia_txt }}</td>
+            <td>{{ r.ar_vazia_txt }}</td>
+            <td class="text-end">{{ r.kwh_desperdicio|br(1) }}</td>
+            <td class="text-end">{{ r.custo_desperdicio|br(2) }}</td>
+          {% else %}
+            <td colspan="6" class="text-body-secondary">Sem leituras no período.</td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-body-secondary p-4">Nenhuma sala cadastrada. Cadastre em “Cadastrar salas”.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Frequência de uso por dia e horário</div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="rel-calor">
+        <thead>
+          <tr><th></th>{% for h in range(24) %}<th>{{ '%02d'|format(h) }}</th>{% endfor %}</tr>
+        </thead>
+        <tbody>
+          {% for linha in rel.mapa_calor %}
+          <tr>
+            <th scope="row">{{ linha.dia }}</th>
+            {% for c in linha.celulas %}
+              {% if c.pct is not none %}
+                <td style="background: rgba(13,110,253,{{ (0.12 + c.pct / 100 * 0.88)|round(2) }})"
+                    title="{{ linha.dia }} {{ '%02d'|format(c.hora) }}h: movimento em {{ c.pct|br(0) }}% do tempo"></td>
+              {% else %}
+                <td title="{{ linha.dia }} {{ '%02d'|format(c.hora) }}h: sem dados"></td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="small text-body-secondary mt-2">Quanto mais escuro, maior a parte do tempo com movimento. Células vazias não têm dados.</div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Desperdício por horário do dia</div>
+  <div class="card-body">
+    <div class="rel-barras" role="img" aria-label="Tempo com equipamento ligado e sala vazia, por hora do dia">
+      {% for b in rel.barras_hora %}
+        <div style="height: 100%; display:flex; align-items:flex-end;" title="{{ '%02d'|format(b.hora) }}h: {{ b.txt }}">
+          <div class="rel-barra" style="height: {{ b.pct|round(1) }}%; width: 100%;"></div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="rel-barras-rotulos mt-1">
+      {% for b in rel.barras_hora %}<span>{{ '%02d'|format(b.hora) if b.hora % 3 == 0 else '' }}</span>{% endfor %}
+    </div>
+    <div class="small text-body-secondary mt-2">Tempo somado em que luz ou ar-condicionado ficaram ligados sem movimento.</div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header">Alertas do ESP32 no período</div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-6 col-md-3"><div class="text-body-secondary small">Total</div><div class="rel-kpi">{{ rel.ocorrencias.total }}</div></div>
+      <div class="col-6 col-md-3"><div class="text-body-secondary small">Em aberto</div><div class="rel-kpi">{{ rel.ocorrencias.abertas }}</div></div>
+      <div class="col-6 col-md-3"><div class="text-body-secondary small">Duração média até resolver</div><div class="rel-kpi">{{ rel.ocorrencias.duracao_media_txt }}</div></div>
+    </div>
+    {% if rel.ocorrencias.por_motivo %}
+      <hr>
+      <div class="small text-body-secondary mb-1">Como foram resolvidos</div>
+      <ul class="mb-0">
+        {% for motivo, qtd in rel.ocorrencias.por_motivo %}<li>{{ motivo|resolucao }}: {{ qtd }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
+
+<p class="small text-body-secondary">
+  Período de {{ rel.inicio_txt }} a {{ rel.fim_txt }} (horário de Brasília).
+  Energia estimada com {{ rel.premissas.potencia_luz_kw|br(2) }} kW para iluminação e
+  {{ rel.premissas.potencia_ar_kw|br(2) }} kW para o ar-condicionado por sala; são valores de referência, não medições.
+  “Sala vazia” significa sem movimento detectado pelo sensor. Trechos em que o ESP32 ficou sem enviar dados não entram na conta.
+</p>
+{% endblock %}

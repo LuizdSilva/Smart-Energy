@@ -26,3 +26,7 @@ class Config:
     OFFLINE_AFTER_S = 15
     COMMAND_TIMEOUT_S = 10
     STORE_INTERVAL_S = 60
+
+    POTENCIA_LUZ_KW = float(os.environ.get("POTENCIA_LUZ_KW", 0.30))
+    POTENCIA_AR_KW = float(os.environ.get("POTENCIA_AR_KW", 1.60))
+    TARIFA_KWH = float(os.environ.get("TARIFA_KWH", 0.90))

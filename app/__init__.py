@@ -29,6 +29,7 @@ NAV = [
     ("consumo", "Consumo", "bi-lightning-charge", "main.consumo", False),
     ("solar", "Geração Solar", "bi-brightness-high", "main.solar", False),
     ("anomalias", "Anomalias", "bi-exclamation-triangle", "main.anomalias", False),
+    ("relatorio_salas", "Relatório de Salas", "bi-clipboard-data", "main.relatorio_salas", False),
     ("dados", "Gerenciamento de Dados", "bi-database", "main.dados", False),
 ]
 

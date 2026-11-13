@@ -9,7 +9,7 @@ import sqlite3
 from flask import (Blueprint, Response, current_app, flash, jsonify, redirect, render_template, request,
                    session, url_for)
 
-from . import analise_dados_reais, banco_dados, regras_tempo_real
+from . import analise_dados_reais, analise_salas, banco_dados, regras_tempo_real
 
 bp = Blueprint("main", __name__)
 
@@ -173,6 +173,47 @@ def _csv_response(name, header, rows):
     w.writerows(rows)
     return Response("﻿" + buf.getvalue(), mimetype="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f"attachment; filename={name}"})
+
+def _relatorio_salas():
+    conn = _conn()
+    try:
+        try:
+            dias = int(request.args.get("dias", 7))
+        except ValueError:
+            dias = 7
+        if dias not in analise_salas.PERIODOS:
+            dias = 7
+        sala = (request.args.get("sala") or "").strip().upper() or None
+        rel = analise_salas.gerar_relatorio(
+            conn, dias, sala,
+            lacuna_max_s=_cfg("STORE_INTERVAL_S") * 3,
+            potencia_luz_kw=_cfg("POTENCIA_LUZ_KW"),
+            potencia_ar_kw=_cfg("POTENCIA_AR_KW"),
+            tarifa_kwh=_cfg("TARIFA_KWH"),
+        )
+        return conn, rel, dias, sala
+    except Exception:
+        conn.close()
+        raise
+
+@bp.get("/relatorio-salas")
+def relatorio_salas():
+    conn, rel, dias, sala = _relatorio_salas()
+    try:
+        return _page(conn, "relatorio_salas.html", "relatorio_salas", "Relatório de Salas",
+                     "Frequência de uso e desperdício de luz e ar-condicionado (dados do ESP32)",
+                     rel=rel, dias=dias, sala_sel=sala, periodos=analise_salas.PERIODOS)
+    finally:
+        conn.close()
+
+@bp.get("/relatorio-salas.csv")
+def relatorio_salas_csv():
+    conn, rel, dias, sala = _relatorio_salas()
+    try:
+        return _csv_response(f"relatorio_salas_{dias}d.csv", analise_salas.CABECALHO_CSV,
+                             analise_salas.linhas_csv(rel))
+    finally:
+        conn.close()
 
 @bp.get("/exportar/<tipo>.csv")
 def exportar(tipo):
